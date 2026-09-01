@@ -106,7 +106,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <b>الصورة جاهزة</b>
           <button class="btn sm" id="saveClose" style="flex:none;width:auto;padding:6px 14px">إغلاق</button>
         </div>
-        <p class="sb-hint">على الموبايل: <b>اضغط مطوّل على الصورة</b> واختار «حفظ الصورة» أو «Add to Photos».</p>
+        <p class="sb-hint">لو فتحت نافذة مشاركة فوق الصفحة، اقفلها وارجع هنا. على الموبايل: <b>اضغط مطوّل على الصورة</b> واختار «حفظ الصورة» أو «Add to Photos».</p>
         <a id="saveLink"><img id="saveImg" alt="الصورة الجاهزة"></a>
       </div>
     </div>
@@ -892,22 +892,32 @@ function exportAs(type, ext, quality){
                new Date().toISOString().slice(0,10) + '.' + ext;
   off.toBlob(async blob=>{
     if(!blob) return;
+    const url = URL.createObjectURL(blob);
+    const touch = matchMedia('(pointer:coarse)').matches;
+
+    /* على الموبايل: نورّي صندوق "اضغط مطوّل واحفظ" فورًا — ده الطريقة
+       المضمونة اللي بتشتغل بغض النظر عن نافذة المشاركة، لإن بعض
+       أجهزة الأندرويد بتفتح شير شيت من غير أي خيار "حفظ للجهاز" فيها. */
+    if(touch) showSaveBox(url, name);
+
+    /* مشاركة سريعة اختيارية (لواتساب/ماسنجر إلخ) — مش الطريقة الوحيدة للحفظ */
     try{
       const file = new File([blob], name, { type });
       if(navigator.canShare && navigator.canShare({ files:[file] })){
-        await navigator.share({ files:[file] }); return;
+        await navigator.share({ files:[file] });
       }
-    }catch(e){ if(e && e.name === 'AbortError') return; }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = name; a.rel = 'noopener';
-    document.body.appendChild(a);
-    let ok = true;
-    try { a.click(); } catch(e){ ok = false; }
-    a.remove();
-    const touch = matchMedia('(pointer:coarse)').matches;
-    if(!ok || touch) showSaveBox(url, name);
-    else setTimeout(()=>URL.revokeObjectURL(url), 8000);
+    }catch(e){ /* اتقفلت أو اتلغت — صندوق الحفظ لسه ظاهر لو موبايل */ }
+
+    if(!touch){
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.rel = 'noopener';
+      document.body.appendChild(a);
+      let ok = true;
+      try { a.click(); } catch(e){ ok = false; }
+      a.remove();
+      if(!ok) showSaveBox(url, name);
+      else setTimeout(()=>URL.revokeObjectURL(url), 8000);
+    }
   }, type, quality);
 }
 function showSaveBox(url, name){
