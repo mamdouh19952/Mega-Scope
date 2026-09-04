@@ -902,12 +902,14 @@ function exportAs(type, ext, quality){
     if(touch) showSaveBox(url, name);
 
     /* مشاركة سريعة اختيارية (لواتساب/ماسنجر إلخ) — مش الطريقة الوحيدة للحفظ */
-    try{
-      const file = new File([blob], name, { type });
-      if(navigator.canShare && navigator.canShare({ files:[file] })){
-        await navigator.share({ files:[file] });
-      }
-    }catch(e){ /* اتقفلت أو اتلغت — صندوق الحفظ لسه ظاهر لو موبايل */ }
+    if(touch){
+      try{
+        const file = new File([blob], name, { type });
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          await navigator.share({ files:[file] });
+        }
+      }catch(e){ /* اتقفلت أو اتلغت — صندوق الحفظ لسه ظاهر لو موبايل */ }
+    }
 
     if(!touch){
       const a = document.createElement('a');
