@@ -327,6 +327,18 @@ function roundRect(c, x, y, w, h, r){
   c.closePath();
 }
 
+/* سطر من غير حروف عربي (زي رقم التليفون) يترسم LTR صريح:
+   متصفحات الموبايل بتتجاهل علامات العزل ⁦…⁩ جوه الكانفاس
+   فالرقم كان بيطلع مقلوب (8298 032 103 20+). */
+const HAS_AR = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
+function fillBidi(c, text, x, y){
+  if(HAS_AR.test(text)){ c.fillText(text, x, y); return; }
+  c.save();
+  c.direction = 'ltr';
+  c.fillText(text.replace(/[‎‏‪-‮⁦-⁩]/g, ''), x, y);
+  c.restore();
+}
+
 function drawChrome(c, F){
   const g = F.geo, t = F.txt, C = BRAND.colors;
   if(!g) return;
@@ -396,7 +408,7 @@ function drawChrome(c, F){
   y += 3 + m;
   c.font = '400 ' + g.ctaFs + 'px ' + AR();
   c.fillStyle = C.muted;
-  cta.forEach(line => { c.fillText(line, W/2, y + ctaLH/2); y += ctaLH; });
+  cta.forEach(line => { fillBidi(c, line, W/2, y + ctaLH/2); y += ctaLH; });
   c.restore();
 
   // بادجات قبل/بعد
